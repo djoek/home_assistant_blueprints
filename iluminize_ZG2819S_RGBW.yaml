@@ -9,7 +9,7 @@ blueprint:
       description: iluminize 511.344 remote to use
       selector:
         device:
-          integration: deconz
+          integration: zha
           manufacturer: iluminize
           model: ZG2819S-RGBW
     target_light:
