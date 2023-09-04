@@ -10,162 +10,147 @@ blueprint:
       selector:
         device:
           integration: zha
-          manufacturer: iluminize
+          manufacturer: iIuminize
           model: ZG2819S-RGBW
+          multiple: false
+          
     target_light:
       name: Light(s)
       description: The light(s) to control
       selector:
         target:
           entity:
-            domain: light
-    colour_ref:
-      name: Colour Temperature Refence
-      description: The light to use as a colour temp reference
+          - domain:
+            - light
+
+    scene_1:
+      name: ButtonS1
+      description: The scene to be triggered when S1 button is pressed
       selector:
         entity:
-          domain: light
-    working_scene:
-      name: Button1
-      description: The scene to be triggered when the 1 button is pressed
+          domain:
+          - scene
+          multiple: false
+    scene_2:
+      name: ButtonS2
+      description: The scene to be triggered when S2 is pressed
       selector:
         entity:
-          domain: scene
-    sunset_scene:
-      name: Button2
-      description: The scene to be triggered when the 2 is pressed
+          domain:
+          - scene
+          multiple: false
+    scene_3:
+      name: ButtonS3
+      description: The scene to be triggered when S3 is pressed
       selector:
         entity:
-          domain: scene
-    party_scene:
-      name: Button3
-      description: The scene to be triggered when the 3 is pressed
-      selector:
-        entity:
-          domain: scene
-    night_scene:
-      name: Button4
-      description: The scene to be triggered when the 4 is pressed
-      selector:
-        entity:
-          domain: scene
-    force_brightness:
-      name: Force turn on brightness
-      description: Force the brightness to the set level below, when the "on" button
-        on the remote is pushed and lights turn on.
-      default: false
-      selector:
-        boolean: {}
-    brightness:
-      name: Brightness
-      description: Brightness of the light(s) when turning on
-      default: 50
-      selector:
-        number:
-          min: 0.0
-          max: 100.0
-          mode: slider
-          step: 1.0
-          unit_of_measurement: '%'
-    step_value:
-      name: Brightness increment/decrement percent
-      description: Set the step percent value for brightness and color warmth
-      default: 10
-      selector:
-        number:
-          min: 1.0
-          max: 20.0
-          mode: slider
-          step: 1.0
-          unit_of_measurement: '%'
-          
+          domain:
+          - scene
+          multiple: false
+
+
 mode: restart
 max_exceeded: silent
 
-variables:
-  force_brightness: !input 'force_brightness'
-  step_value: !input 'step_value'
-  colour_ref: !input 'colour_ref'
   
 trigger:
 - platform: event
   event_type: zha_event
   event_data:
-    device_id: !input 'remote'
+    device_id: !input remote
     
 action:
-- variables:
-    event: '{{ trigger.event.data.event }}'
+
 - choose:
   - conditions:
-    - '{{ event == 1008 }}'
-    sequence:
-    - choose:
-      - conditions: '{{ force_brightness }}'
-        sequence:
-        - service: light.toggle
-          target: !input 'target_light'
-          data:
-            brightness_pct: !input 'brightness'
-      default:
-      - service: light.toggle
-        target: !input 'target_light'
-  - conditions:
-    - '{{ event == 2008 }}'
+      - condition: template
+        value_template: '{{ trigger.event.data.command == "on" }}'
     sequence:
     - service: light.turn_on
       target: !input 'target_light'
-      data:
-        brightness_step_pct: '{{ step_value }}'
-        transition: 1
+
+        
   - conditions:
-    - '{{ event == 3008 }}'
+      - condition: template
+        value_template: '{{ trigger.event.data.command == "off" }}'
     sequence:
-    - service: light.turn_on
+    - service: light.turn_off
       target: !input 'target_light'
-      data:
-        brightness_step_pct: -{{ step_value }}
-        transition: 1
+      
   - conditions:
-    - '{{ event == 4008 }}'
-    sequence:
-    - service: light.turn_on
-      target: !input 'target_light'
-      data:
-        color_temp: '{{state_attr(colour_ref, ''color_temp'')|int + 60}}'
-  - conditions:
-    - '{{ event == 1006 }}'
-    sequence:
-    - service: light.turn_on
-      target: !input 'target_light'
-      data:
-        color_temp: '{{state_attr(colour_ref, ''color_temp'')|int - 60}}'
-  - conditions:
-    - '{{ event == 2006 }}'
+      - condition: template
+        value_template: '{{ trigger.event.data.command == "move_to_color" }}'
     sequence:
     - service: light.turn_on
       target: !input 'target_light'
       data:
         xy_color:
-        - '{{ trigger.event.data.xy.0 }}'
-        - '{{ trigger.event.data.xy.1 }}'
+        - '{{ trigger.event.data.params.color_x /100000 }}'
+        - '{{ trigger.event.data.params.color_y /100000 }}'
+      
   - conditions:
-    - '{{ event == 1005 }}'
+      - condition: template
+        value_template: '{{ trigger.event.data.command == "move_to_color_temp" }}'
     sequence:
-    - service: homeassistant.turn_on
-      entity_id: !input 'working_scene'
+    - service: light.turn_on
+      target: !input 'target_light'
+      data:
+        color_temp: '{{ trigger.event.data.params.color_temp_mireds }}'
+        transition: '{{ trigger.event.data.params.transition_time }}'
+
   - conditions:
-    - '{{ event == 2005 }}'
+      - condition: and
+        conditions: 
+        - '{{ trigger.event.data.command == "step_with_on_off" }}'
+        - '{{ trigger.event.data.params.step_mode == 0 }}'
     sequence:
-    - service: homeassistant.turn_on
-      entity_id: !input 'sunset_scene'
+    - service: light.turn_on
+      target: !input 'target_light'
+      data:
+        brightness_step: '{{ trigger.event.data.params.step_size }}'
+      
   - conditions:
-    - '{{ event == 3005 }}'
+      - condition: and
+        conditions: 
+        - '{{ trigger.event.data.command == "step_with_on_off" }}'
+        - '{{ trigger.event.data.params.step_mode == 1 }}'
     sequence:
-    - service: homeassistant.turn_on
-      entity_id: !input 'party_scene'
+    - service: light.turn_on
+      target: !input 'target_light'
+      data:
+        brightness_step: '{{ trigger.event.data.params.step_size * -1}}'
+        
+        
+        
+        
+        
+
   - conditions:
-    - '{{ event == 4005 }}'
+      - condition: and
+        conditions: 
+        - '{{ trigger.event.data.command == "recall" }}'
+        - '{{ trigger.event.data.params.scene_id == 1 }}'
     sequence:
-    - service: homeassistant.turn_on
-      entity_id: !input 'night_scene'
+    - service: scene.turn_on
+      target:
+        entity_id: !input 'scene_1'
+        
+  - conditions:
+      - condition: and
+        conditions: 
+        - '{{ trigger.event.data.command == "recall" }}'
+        - '{{ trigger.event.data.params.scene_id == 2 }}'
+    sequence:
+    - service: scene.turn_on
+      target:
+        entity_id: !input 'scene_2'
+      
+  - conditions:
+      - condition: and
+        conditions: 
+        - '{{ trigger.event.data.command == "recall" }}'
+        - '{{ trigger.event.data.params.scene_id == 3 }}'
+    sequence:
+    - service: scene.turn_on
+      target:
+        entity_id: !input 'scene_3'
