@@ -78,17 +78,21 @@ blueprint:
           mode: slider
           step: 1.0
           unit_of_measurement: '%'
+          
 mode: restart
 max_exceeded: silent
+
 variables:
   force_brightness: !input 'force_brightness'
   step_value: !input 'step_value'
   colour_ref: !input 'colour_ref'
+  
 trigger:
 - platform: event
   event_type: zha_event
   event_data:
     device_id: !input 'remote'
+    
 action:
 - variables:
     event: '{{ trigger.event.data.event }}'
@@ -149,19 +153,19 @@ action:
     - '{{ event == 1005 }}'
     sequence:
     - service: homeassistant.turn_on
-      entity_id: !input 'Button1'
+      entity_id: !input 'working_scene'
   - conditions:
     - '{{ event == 2005 }}'
     sequence:
     - service: homeassistant.turn_on
-      entity_id: !input 'Button2'
+      entity_id: !input 'sunset_scene'
   - conditions:
     - '{{ event == 3005 }}'
     sequence:
     - service: homeassistant.turn_on
-      entity_id: !input 'Button3'
+      entity_id: !input 'party_scene'
   - conditions:
     - '{{ event == 4005 }}'
     sequence:
     - service: homeassistant.turn_on
-      entity_id: !input 'Button4'
+      entity_id: !input 'night_scene'
