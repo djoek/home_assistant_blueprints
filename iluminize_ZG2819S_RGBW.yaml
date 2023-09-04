@@ -78,7 +78,6 @@ blueprint:
           mode: slider
           step: 1.0
           unit_of_measurement: '%'
-  source_url:
 mode: restart
 max_exceeded: silent
 variables:
