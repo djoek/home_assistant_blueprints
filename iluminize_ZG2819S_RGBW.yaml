@@ -1,6 +1,6 @@
 blueprint:
   name: iluminize ZG2819S-RGBW
-  source_url: https://gist.github.com/djoek/ddabd8c94057a86aad1734e0ab513886/raw/bee58d171bc79b7151a65456cc7da670646282c7/iluminize.yaml
+  source_url: https://github.com/djoek/home_assistant_blueprints/blob/master/iluminize_ZG2819S_RGBW.yaml
   description: Control lights with a iluminize 511.344 RGBW Remote
   domain: automation
   input:
