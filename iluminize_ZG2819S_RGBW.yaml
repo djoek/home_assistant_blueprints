@@ -23,6 +23,15 @@ blueprint:
           - domain:
             - light
 
+    endpoint:
+      name: Endpoint 1234
+      description: the Endpoint to listen to
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 4
+
     scene_1:
       name: ButtonS1
       description: The scene to be triggered when S1 button is pressed
@@ -58,28 +67,28 @@ trigger:
   event_type: zha_event
   event_data:
     device_id: !input remote
+    endpoint_id: !input endpoint
     
 action:
-
+- variables:
+    command: '{{ trigger.event.data.command }}'
+    cluster_id: '{{ trigger.event.data.cluster_id }}'
 - choose:
   - conditions:
-      - condition: template
-        value_template: '{{ trigger.event.data.command == "on" }}'
+    - '{{ command == "on" }}'
     sequence:
     - service: light.turn_on
       target: !input 'target_light'
 
         
   - conditions:
-      - condition: template
-        value_template: '{{ trigger.event.data.command == "off" }}'
+    - '{{ command == "off" }}'
     sequence:
     - service: light.turn_off
       target: !input 'target_light'
       
   - conditions:
-      - condition: template
-        value_template: '{{ trigger.event.data.command == "move_to_color" }}'
+    - '{{ command == "move_to_color" }}'
     sequence:
     - service: light.turn_on
       target: !input 'target_light'
@@ -89,8 +98,7 @@ action:
         - '{{ trigger.event.data.params.color_y /100000 }}'
       
   - conditions:
-      - condition: template
-        value_template: '{{ trigger.event.data.command == "move_to_color_temp" }}'
+    - '{{ command == "move_to_color_temp" }}'
     sequence:
     - service: light.turn_on
       target: !input 'target_light'
@@ -101,7 +109,7 @@ action:
   - conditions:
       - condition: and
         conditions: 
-        - '{{ trigger.event.data.command == "step_with_on_off" }}'
+        - '{{ command == "step_with_on_off" }}'
         - '{{ trigger.event.data.params.step_mode == 0 }}'
     sequence:
     - service: light.turn_on
@@ -112,7 +120,7 @@ action:
   - conditions:
       - condition: and
         conditions: 
-        - '{{ trigger.event.data.command == "step_with_on_off" }}'
+        - '{{ command == "step_with_on_off" }}'
         - '{{ trigger.event.data.params.step_mode == 1 }}'
     sequence:
     - service: light.turn_on
@@ -121,14 +129,10 @@ action:
         brightness_step: '{{ trigger.event.data.params.step_size * -1}}'
         
         
-        
-        
-        
-
   - conditions:
       - condition: and
         conditions: 
-        - '{{ trigger.event.data.command == "recall" }}'
+        - '{{ command == "recall" }}'
         - '{{ trigger.event.data.params.scene_id == 1 }}'
     sequence:
     - service: scene.turn_on
@@ -138,7 +142,7 @@ action:
   - conditions:
       - condition: and
         conditions: 
-        - '{{ trigger.event.data.command == "recall" }}'
+        - '{{ command == "recall" }}'
         - '{{ trigger.event.data.params.scene_id == 2 }}'
     sequence:
     - service: scene.turn_on
@@ -148,7 +152,7 @@ action:
   - conditions:
       - condition: and
         conditions: 
-        - '{{ trigger.event.data.command == "recall" }}'
+        - '{{ command == "recall" }}'
         - '{{ trigger.event.data.params.scene_id == 3 }}'
     sequence:
     - service: scene.turn_on
